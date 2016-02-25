@@ -1,0 +1,45 @@
+The following rule will iterate over each modify-attr element in an XDS document using the for-each action.
+If that element contains an add-value with a value of "null", it should strip the add-value element.
+
+There are several tricky parts to a for-each:
+1) You need to for-each over a local variable of type "node-set". 
+2) When setting that variable (lvModify), the XPATH expression should select the same elements you want to iterate over.  In this case modify-attr.
+3) Within the for-each, use the automatic variable "current-node" to access the XML doc.
+
+A challenge with IDM is knowing the current context of the document.  You can do a trace of XPath name(.) to print the current outer element name.
+
+
+<?xml version="1.0" encoding="UTF-8"?>
+<rule>
+   <description>Remove all values if NULL</description>
+   <conditions>
+      <and>
+         <if-operation mode="nocase" op="equal">modify</if-operation>
+      </and>
+   </conditions>
+   <actions>
+      <do-set-local-variable name="lvModify" scope="policy">
+         <arg-node-set>
+            <token-xpath expression="modify-attr" />
+         </arg-node-set>
+      </do-set-local-variable>
+      <do-for-each>
+         <arg-node-set>
+            <token-local-variable name="lvModify" />
+         </arg-node-set>
+         <arg-actions>
+            <do-if>
+               <arg-conditions>
+                  <and>
+                     <if-local-variable mode="nocase" name="current-node" op="equal">null</if-local-variable>
+                  </and>
+               </arg-conditions>
+               <arg-actions>
+                  <do-strip-xpath expression="$current-node/add-value" />
+               </arg-actions>
+               <arg-actions />
+            </do-if>
+         </arg-actions>
+      </do-for-each>
+   </actions>
+</rule>
